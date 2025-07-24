@@ -1,0 +1,1006 @@
+---
+title: "MacNeill et al., 2026 - VC Topic Modeling Paper"
+output: html_document
+date: "2025-07-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Alright, lets load in our packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(forcats)
+library(tidyverse)
+library(tidyr)
+library(cowplot)
+```
+
+Load in your data
+```{r load in your data}
+
+articledata<-read.csv("~/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
+unigramtopic<-read.csv("~/VCtopicmodeling/Topics_Sorted_23July2025.csv")
+
+```
+
+Join the data
+```{r}
+fulldata<-left_join(articledata,unigramtopic,by="CovNum")
+
+#Now check to see if any articles don't have a topic
+
+missing_topics <- fulldata %>%
+  filter(is.na(Topic))
+
+#Okay, some didn't match to a CovNum. Lets check what didn't match from our topic data
+unmatched_covnums <- anti_join(articledata, unigramtopic, by = "CovNum")
+unmatched_topic <- anti_join(unigramtopic, articledata, by = "CovNum")
+#lets just filter out the NAs for now
+
+fulldata <- fulldata %>% 
+  filter(!is.na(Topic)) %>% 
+  mutate(PubYear = as.numeric(year))#We might be having an issue because pubyear is an integer. Fix then rerun
+
+```
+
+Alright, lets first make that stacked plot. We are going to need to mutate the data so that we have proportions, since it's a percentage stacked bar. We're going to also need to fill in some zeroes for the years where a topic is not present! This will help us when we need to plot, since it uses the # of topics present each year to calculate the percentage.
+```{r}
+
+# Count articles by year and topic. This will give us the number of times a year and a topic are listed together within each year. We need this to calculate the percentages.
+
+fig1data <- fulldata %>%
+  count(year, Topic)
+
+#Now get all combinations of year and topic. This will let
+year_topic_combos <- expand_grid(year = unique(fig1data$year),Topic = unique(fig1data$Topic)) #expand grid gives every possible combo for these two variables. Even if a topic has zero articles in a given year, we will still represent it as 0 in the data because we have every possible combo represented (even if it don't exist).
+
+#Here, we are joining our real fig1data (which only includes extant topic-year pairs) with the full grid of all topic-year combinations (year_topic_combos). We are using replace_na(n, 0) because it will fill in zeros for the missing combinations.
+
+fig1data <- year_topic_combos %>%
+  left_join(fig1data, by = c("year", "Topic")) %>%
+  mutate(n = replace_na(n, 0))
+
+#Now that we have all year-topic combos represented, we can calculate the percentage of articles that fall into each topic each year.
+
+fig1data_percent <- fig1data_filled %>%
+  group_by(year) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup()
+
+write.csv(fig1data,"stackeddata.csv")
+```
+
+```{r}
+
+#lets reorder the topics by frequency
+#fig1data <- fig1data_percent %>%
+#  mutate(Topic = fct_infreq(Topic))  # from the forcats package
+
+# use the below for custom ordering of topics
+#fig1data_percent$Topic<- factor(fig1data_percent$Topic, levels = c(
+#"Ecosystem Ecology",
+#  "Evolution",
+#  "Disease Ecology",
+#  "Neuroscience",
+#  "Microbiology",
+#  "Genetics",
+#  "Gene Editing" ,
+#  "Bioinformatics",
+#  "Phylogenetics",
+#  "PCR Techniques",
+#  "Cell Structure & Function",
+#  "Anatomy & Physiology",
+#  "Noise",
+#  "Other"))
+
+fig1data_percent <- fig1data_percent %>%
+  group_by(Topic) %>%
+  mutate(total_n = sum(n)) %>%  # Total count per topic
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total_n, .desc = TRUE))  # Top = more total articles
+
+ggplot(fig1data_percent, aes(x = year, y = Percent, fill = Topic)) +
+  geom_area(color = "black", size = 0.2, alpha = 0.8) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(0, 100)) +
+  labs( x = "Publication Year",
+        y = "Articles (%)",
+        fill = "Topic")+
+  #geom_text(data = fig1data_percent %>% #this would add N to the top of each year, but I don't love it
+   #           group_by(year) %>%
+   #           summarise(total_n = sum(n)), # Get total count per year,
+   #        aes(x = year, y = 100, label = total_n),
+   #        inherit.aes = FALSE,
+   #        size = 3)+
+  theme_classic(base_size = 18) +
+  theme(panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 1),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.position = "right")+         # Y-axis title)+
+scale_fill_manual(values = c("Ecosystem Ecology" = "#264653",  # Dark teal
+                               "Evolution" = "#2a9d8f",  # bluey green
+                               "Disease Ecology"= "#e9c46a",  # Mustard yellow
+                               "Microbiology" = "#f4a261",  # light orange
+                               "Genetics"= "#e76f51",  # Brick red
+                               "Gene Editing" = "#a05c44",  # Burnt sienna
+                               "Bioinformatics"= "#8ab17d",  # Sage green
+                               "Phylogenetics"           = "#99c1b9",  # Soft mint blue
+                               "Cell Structure & Function" = "#4a5759", # Olive gray
+                               "PCR Techniques"          = "#6d597a",  # Muted plum
+                               "Anatomy & Physiology"    = "#b56576",  # Rose mauve
+                               "Neuroscience"            = "#457b9d",  # Dusty blue
+                               "Noise"                   = "#adb5bd",  # Cool gray
+                               "Other"                   = "#6c757d",  # Graphite gray
+                               "Unknown"                 = "#003049"))+
+  scale_x_continuous(limits = c(2000, 2022),
+                     breaks = seq(2000, 2022, by = 5),
+                     minor_breaks = seq(2000, 2022, by = 1))
+  #geom_vline(xintercept = 2011, linetype = "dashed", color = "red", size = 0.5)#add the line for V&C
+
+
+ggsave("topictime_area_24July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
+
+```
+Here's the version that just uses n. We'll have to reorder the legend a bit to make interpretation a little easier.
+```{r}
+fig1data <- fig1data %>%
+  group_by(Topic) %>%
+  mutate(total_n = sum(n)) %>% #here, I'm calculating the total number of articles per group
+  ungroup() %>%  #Remove grouping; makes several parts of graphing easier
+  mutate(Topic = fct_reorder(Topic, total_n, .desc = TRUE)) # Reorder the Topic factor by total_n in descending order
+
+ggplot(fig1data, aes(x = year, y = n, fill = Topic)) +
+  geom_area(color = "black", size = 0.2, alpha = 0.8) +
+  labs(x = "Publication Year",
+       y = expression("Articles (" * italic(n) * ")"),
+       fill = "Topic") +
+  scale_x_continuous(breaks = seq(2000, 2025, 5)) +
+  scale_y_continuous(breaks = seq(0,100,10))+
+  theme_classic(base_size = 18) +
+  scale_fill_manual(values = c(
+    "Ecosystem Ecology" = "#264653",
+    "Evolution" = "#2a9d8f",
+    "Disease Ecology"= "#e9c46a",
+    "Microbiology" = "#f4a261",
+    "Genetics"= "#e76f51",
+    "Gene Editing" = "#a05c44",
+    "Bioinformatics"= "#8ab17d",
+    "Phylogenetics" = "#99c1b9",
+    "Cell Structure & Function" = "#4a5759",
+    "PCR Techniques" = "#6d597a",
+    "Anatomy & Physiology" = "#b56576",
+    "Neuroscience" = "#457b9d",
+    "Noise" = "#adb5bd",
+    "Other" = "#6c757d",
+    "Unknown" = "#003049"
+  )) +
+  theme(
+    axis.line = element_line(color = "black", size = 0.3),
+    axis.ticks = element_line(color = "black", size = 0.3),
+    axis.ticks.length = unit(5, "pt"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    legend.background = element_blank(),
+    plot.margin = unit(c(5, 5, 5, 5), "pt"))
+    #geom_vline(xintercept = 2011, linetype = "dashed", color = "red", size = 0.5)#add the line for V&C
+
+ggsave("topictime_area_cumulative_24July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
+
+```
+
+Now lets make a bar plot version
+```{r}
+fig1data_percent <- fig1data_percent %>%
+  group_by(Topic) %>%
+  mutate(total_n = sum(n)) %>%      # Total count per topic
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total_n, .desc = F))  # Reorder by total_n
+
+ggplot(fig1data_percent, aes(x = as.factor(year), y = Percent, fill = Topic)) +
+  geom_bar(stat = "identity", position = "stack") +
+  # Add total n per year at the top of each bar
+  geom_text(data = fig1data_percent %>%
+              group_by(year) %>%
+              summarise(total_n = sum(n)),
+            aes(x = as.factor(year), y = 103, label = total_n),
+            inherit.aes = FALSE,
+            size = 5) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05)), limits = c(0, 110)) +
+  labs(x = "Publication Year",
+    y = "Articles (%)",
+    fill = "Topic")+
+  theme_minimal(base_size = 18)+
+    scale_fill_manual(values = c("Ecosystem Ecology" = "#264653",  # Deep teal
+                               "Evolution" = "#2a9d8f",  # Jade green
+                               "Disease Ecology"= "#e9c46a",  # Mustard yellow
+                               "Microbiology" = "#f4a261",  # Ochre
+                               "Genetics"= "#e76f51",  # Brick red
+                               "Gene Editing" = "#a05c44",  # Burnt sienna
+                               "Bioinformatics"= "#8ab17d",  # Sage green
+                               "Phylogenetics"           = "#99c1b9",  # Soft mint blue
+                               "Cell Structure & Function" = "#4a5759", # Olive gray
+                               "PCR Techniques"          = "#6d597a",  # Muted plum
+                               "Anatomy & Physiology"    = "#b56576",  # Rose mauve
+                               "Neuroscience"            = "#457b9d",  # Dusty blue
+                               "Noise"                   = "#adb5bd",  # Cool gray
+                               "Other"                   = "#6c757d",  # Graphite gray
+                               "Unknown"                 = "#003049"))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.position = "right")+         # Y-axis title
+    scale_y_continuous(breaks = seq(0,100,10))
+
+ggsave("topictime_bar_24July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
+```
+
+Now lets make the cumulative version
+```{r}
+# Reorder Topic by total count, then reverse for proper stacking order
+fig1data_bar <- fig1data %>%
+  group_by(Topic) %>%
+  mutate(total_n = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total_n, .desc = TRUE),
+         Topic = fct_rev(Topic))  # So most common appears at bottom of stack and top of legend
+
+# Plot
+ggplot(fig1data_bar, aes(x = as.factor(year), y = n, fill = Topic)) +
+  geom_bar(stat = "identity", color = "black", size = 0.2) +
+  geom_text(data = fig1data_bar %>% # Add total count labels above bars
+              group_by(year) %>%
+              summarise(total_n = sum(n)),
+            aes(x = as.factor(year), y = total_n + 2, label = total_n),
+            inherit.aes = FALSE,
+            size = 5) +
+  labs(x = "Publication Year",
+       y = expression("Articles (" * italic(n) * ")"),
+       fill = "Topic") +
+  scale_y_continuous(breaks = seq(0,100,10))+
+  scale_fill_manual(values = c("Ecosystem Ecology" = "#264653",
+                               "Evolution" = "#2a9d8f",
+                               "Disease Ecology" = "#e9c46a",
+                               "Microbiology" = "#f4a261",
+                               "Genetics" = "#e76f51",
+                               "Gene Editing" = "#a05c44",
+                               "Bioinformatics" = "#8ab17d",
+                               "Phylogenetics" = "#99c1b9",
+                               "Cell Structure & Function" = "#4a5759",
+                               "PCR Techniques" = "#6d597a",
+                               "Anatomy & Physiology" = "#b56576",
+                               "Neuroscience" = "#457b9d",
+                               "Noise" = "#adb5bd",
+                               "Other" = "#6c757d",
+                               "Unknown" = "#003049"))+
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 13),
+        legend.title = element_text(size = 13, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+# Save
+ggsave("topictime_bar_cumulative_24July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
+```
+
+
+```{r modality count bar}
+modality_long<-fulldata %>%
+  filter(!is.na(modality), !is.na(Topic)) %>%
+  separate_rows(modality, sep = ";\\s*")  # Split on semicolon and optional space
+
+# Count each modality by topic
+modality_counts <- modality_long %>%
+  count(Topic, modality) %>%
+  group_by(Topic) %>%
+  mutate(total = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total, .desc = TRUE)) #order topic by total count
+
+modality_counts$modality<-factor(modality_counts$modality, levels=c("In-person",
+                                                             "Hybrid (in-person and online)",
+                                                             "Online",
+                                                             "Not specified"))
+
+# Bar plot: stacked by modality
+ggplot(modality_counts, aes(x = Topic, y = n, fill = modality)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "Modality")+
+  theme_classic(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_fill_manual(values = c("In-person" = "#adb5bd",
+                               "Hybrid (in-person and online)" = "#e9c46a",
+                               "Online" = "#8ab17d",
+                               "Not specified" = "#264653"))+
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 13),
+        legend.title = element_text(size = 13, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+ggsave("topicmodality_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+
+```{r modality stacked bar}
+####Stacked Bar ####
+
+#manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
+modality_topic_combos <- expand_grid(modality = unique(modality_long$modality),Topic = unique(fulldata_long$Topic)) 
+
+modality_counts <- modality_long %>%
+  count(Topic, modality)
+
+modality_counts <- modality_topic_combos %>%
+  left_join(modality_counts, by = c("Topic", "modality")) %>%
+  mutate(n = replace_na(n, 0))
+
+modality_percent <- modality_counts %>%
+  group_by(Topic) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>% 
+  mutate(Topic = factor(Topic, levels = c("Anatomy & Physiology",
+                                          "Bioinformatics",
+                                          "Cell Structure & Function",
+                                          "Disease Ecology",
+                                          "Ecosystem Ecology",
+                                          "Evolution",
+                                          "Gene Editing" ,
+                                          "Genetics",
+                                          "Microbiology",
+                                          "Neuroscience",
+                                          "PCR Techniques",
+                                          "Phylogenetics",
+                                          "Noise",
+                                          "Other"),
+                        ), Topic = fct_rev(Topic))
+
+modality_percent$modality<-factor(modality_percent$modality, levels=c("In-person",
+                                                             "Hybrid (in-person and online)",
+                                                             "Online",
+                                                             "Not specified"))
+
+ggplot(modality_percent, aes(x = Percent, y = Topic, fill = modality)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Topic", x = "Articles (%)", fill = "Modality") +
+  theme_classic(base_size = 14) +
+  theme(axis.text.y = element_text(angle = 90, hjust = 1))+
+  geom_text(data = modality_percent %>% 
+              group_by(Topic) %>%
+              summarise(total_n = sum(n)),
+            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+            inherit.aes = FALSE,
+            size = 5)+
+  scale_fill_manual(values = c("In-person" = "#adb5bd",
+                               "Hybrid (in-person and online)" = "#e9c46a",
+                               "Online" = "#8ab17d",
+                               "Not specified" = "#264653"))+
+  guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.background = element_blank(),
+        legend.position = "bottom",
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 13, face = "bold"),
+         plot.margin = margin(5.5, 50, 5.5, 5.5))+
+  annotate("text",
+         x = 115,  # adjust as needed to match right margin
+         y = length(unique(context_percent$Topic)) - 9,  # top of y axis
+         label = "bold('Articles'~(italic(n)))",  # bold + italic
+         angle = 270,  # rotate text vertically
+         hjust = 1,   # align to top
+         fontface = "bold",
+         parse = TRUE,
+         size = 5)+
+  coord_cartesian(xlim = c(0, 100), clip = "off")+
+  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  
+ggsave("topicmodality_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+
+```
+
+```{r context count bar}
+context_long<-fulldata %>%
+  filter(!is.na(context), !is.na(Topic)) %>%
+  separate_rows(context, sep = ";\\s*")  # Split on semicolon and optional space
+
+# Count each context by topic
+context_counts <- context_long %>%
+  count(Topic, context) %>%
+  group_by(Topic) %>%
+  mutate(total = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total, .desc = TRUE)) #order topic by total count
+
+context_counts$context<-factor(context_counts$context, levels=c("Lecture",
+                                                                "Lab",
+                                                                "Field",
+                                                                "Non-lab section (e.g., recitation, discussion)",
+                                                                "Other",
+                                                                "Not specified"))
+
+# Bar plot: stacked by context
+ggplot(context_counts, aes(x = Topic, y = n, fill = context)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "Context")+
+  theme_classic(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_fill_manual(values = c("Lecture" = "#66101F",
+                               "Lab" = "#52528C",
+                               "Field"="#00A676",
+                               "Non-lab section (e.g., recitation, discussion)" = "#FCBA04",
+                               "Other" = "#808080",
+                               "Not specified"="#B5CBB7"))+
+  #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+ggsave("topiccontext_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+```{r context stacked bar}
+####Stacked Bar ####
+
+#manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
+context_topic_combos <- expand_grid(context = unique(context_long$context),Topic = unique(context_long$Topic)) 
+
+context_counts <- context_long %>%
+  count(Topic, context)
+
+context_counts <- context_topic_combos %>%
+  left_join(context_counts, by = c("Topic", "context")) %>%
+  mutate(n = replace_na(n, 0))
+
+context_percent <- context_counts %>%
+  group_by(Topic) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>% 
+  mutate(Topic = factor(Topic, levels = c("Anatomy & Physiology",
+                                          "Bioinformatics",
+                                          "Cell Structure & Function",
+                                          "Disease Ecology",
+                                          "Ecosystem Ecology",
+                                          "Evolution",
+                                          "Gene Editing" ,
+                                          "Genetics",
+                                          "Microbiology",
+                                          "Neuroscience",
+                                          "PCR Techniques",
+                                          "Phylogenetics",
+                                          "Noise",
+                                          "Other"),
+  ), Topic = fct_rev(Topic))
+
+context_percent$context<-factor(context_percent$context, levels=c("Lecture",
+                                                                "Lab",
+                                                                "Field",
+                                                                "Non-lab section (e.g., recitation, discussion)",
+                                                                "Other",
+                                                                "Not specified"))
+context_percent<-context_percent %>% 
+  filter(!is.na(context))
+
+ggplot(context_percent, aes(x = Percent, y = Topic, fill = context)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Topic", x = "Articles (%)", fill = "Context") +
+  theme_classic(base_size = 14) +
+  theme(axis.text.y = element_text(angle = 90, hjust = 1))+
+  geom_text(data = context_percent %>% 
+              group_by(Topic) %>%
+              summarise(total_n = sum(n)),
+            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+            inherit.aes = FALSE,
+            size = 5)+
+  scale_fill_manual(values = c("Lecture" = "#66101F",
+                               "Lab" = "#52528C",
+                               "Field"="#00A676",
+                               "Non-lab section (e.g., recitation, discussion)" = "#FCBA04",
+                               "Other" = "#808080",
+                               "Not specified"="#B5CBB7"))+
+  guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.background = element_blank(),
+        legend.position = "bottom",
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 13, face = "bold"),
+         plot.margin = margin(5.5, 50, 5.5, 5.5))+
+  annotate("text",
+         x = 115,  # adjust as needed to match right margin
+         y = length(unique(context_percent$Topic)) - 9,  # top of y axis
+         label = "bold('Articles'~(italic(n)))",  # bold + italic
+         angle = 270,  # rotate text vertically
+         hjust = 1,   # align to top
+         fontface = "bold",
+         parse = TRUE,
+         size = 5)+
+  coord_cartesian(xlim = c(0, 100), clip = "off")+
+  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+
+ggsave("topiccontext_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+```{r class_size count bar}
+class_size_long<-fulldata %>%
+  filter(!is.na(class_size), !is.na(Topic)) %>%
+  separate_rows(class_size, sep = ";\\s*")  # Split on semicolon and optional space
+
+# Count each class_size by topic
+class_size_counts <- class_size_long %>%
+  count(Topic, class_size) %>%
+  group_by(Topic) %>%
+  mutate(total = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total, .desc = TRUE)) #order topic by total count
+
+class_size_counts$class_size<-factor(class_size_counts$class_size, levels=c("> 100",
+                                                                "50-100",
+                                                                "25-50",
+                                                                "0-25",
+                                                                "Not specified"))
+
+# Bar plot: stacked by class_size
+ggplot(class_size_counts, aes(x = Topic, y = n, fill = class_size)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "class_size")+
+  theme_classic(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_fill_manual(values = c("> 100" = "#000F14",
+                               "50-100" = "#3A376C",
+                               "25-50"="#7E52A0",
+                               "0-25" = "#D295BF",
+                               "Not specified"="#E6BCCD"))+
+  #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+ggsave("topicclass_size_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+
+```{r class_size stacked bar}
+####Stacked Bar ####
+
+class_size_long<-fulldata %>%
+  filter(!is.na(class_size), !is.na(Topic)) %>%
+  separate_rows(class_size, sep = ";\\s*")  # Split on semicolon and optional space
+
+
+#manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
+class_size_topic_combos <- expand_grid(class_size = unique(class_size_long$class_size),Topic = unique(class_size_long$Topic)) 
+
+class_size_counts <- class_size_long %>%
+  count(Topic, class_size)
+
+class_size_counts <- class_size_topic_combos %>%
+  left_join(class_size_counts, by = c("Topic", "class_size")) %>%
+  mutate(n = replace_na(n, 0))
+
+class_size_percent <- class_size_counts %>%
+  group_by(Topic) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>% 
+  mutate(Topic = factor(Topic, levels = c("Anatomy & Physiology",
+                                          "Bioinformatics",
+                                          "Cell Structure & Function",
+                                          "Disease Ecology",
+                                          "Ecosystem Ecology",
+                                          "Evolution",
+                                          "Gene Editing" ,
+                                          "Genetics",
+                                          "Microbiology",
+                                          "Neuroscience",
+                                          "PCR Techniques",
+                                          "Phylogenetics",
+                                          "Noise",
+                                          "Other"),
+  ), Topic = fct_rev(Topic))
+
+class_size_counts$class_size<-factor(class_size_counts$class_size, levels=c("> 100",
+                                                                "50-100",
+                                                                "25-50",
+                                                                "0-25",
+                                                                "Not specified"))
+class_size_percent<-class_size_percent %>% 
+  filter(!is.na(class_size))
+
+ggplot(class_size_percent, aes(x = Percent, y = Topic, fill = class_size)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Topic", x = "Articles (%)", fill = "Class Size") +
+  theme_classic(base_size = 14) +
+  theme(axis.text.y = element_text(angle = 90, hjust = 1))+
+  geom_text(data = class_size_percent %>% 
+              group_by(Topic) %>%
+              summarise(total_n = sum(n)),
+            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+            inherit.aes = FALSE,
+            size = 5)+
+  scale_fill_manual(values = c("> 100" = "#000F14",
+                               "50-100" = "#3A376C",
+                               "25-50"="#7E52A0",
+                               "0-25" = "#D295BF",
+                               "Not specified"="#E6BCCD"))+
+ # guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.background = element_blank(),
+        legend.position = "right",
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 13, face = "bold"),
+        plot.margin = margin(5.5, 50, 5.5, 5.5))+
+  annotate("text",
+           x = 115,  # adjust as needed to match right margin
+           y = length(unique(class_size_percent$Topic)) - 9,  # top of y axis
+           label = "bold('Articles'~(italic(n)))",  # bold + italic
+           angle = 270,  # rotate text vertically
+           hjust = 1,   # align to top
+           fontface = "bold",
+           parse = TRUE,
+           size = 5)+
+  coord_cartesian(xlim = c(0, 100), clip = "off")+
+  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+
+ggsave("topicclass_size_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
+```
+```{r studlevel count bar}
+studlevel_long<-fulldata %>%
+  filter(!is.na(studlevel), !is.na(Topic)) %>%
+  separate_rows(studlevel, sep = ";\\s*")  # Split on semicolon and optional space
+
+# Count each studlevel by topic
+studlevel_counts <- studlevel_long %>%
+  count(Topic, studlevel) %>%
+  group_by(Topic) %>%
+  mutate(total = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total, .desc = TRUE)) #order topic by total count
+
+studlevel_counts$studlevel<-factor(studlevel_counts$studlevel, levels=c("Upper-level (Junior/Senior)",
+                                                                        "Intro-level (First-year/Sophomore)",
+                                                                        "Not specified",
+                                                                        "Other"))
+
+# Bar plot: stacked by studlevel
+ggplot(studlevel_counts, aes(x = Topic, y = n, fill = studlevel)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "Student Level")+
+  theme_classic(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_fill_manual(values = c("Upper-level (Junior/Senior)" = "#7DAF9C",
+                               "Intro-level (First-year/Sophomore)" = "#E2B4BD",
+                               "Not specified"="#F1E8B8",
+                               "Other"="#4E4C67"))+
+  #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+ggsave("topicstudlevel_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+```{r studlevel stacked bar}
+####Stacked Bar ####
+
+studlevel_long<-fulldata %>%
+  filter(!is.na(studlevel), !is.na(Topic)) %>%
+  separate_rows(studlevel, sep = ";\\s*")  # Split on semicolon and optional space
+
+
+#manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
+studlevel_topic_combos <- expand_grid(studlevel = unique(studlevel_long$studlevel),Topic = unique(studlevel_long$studlevel$Topic)) 
+
+studlevel_counts <- studlevel_long %>%
+  count(Topic, studlevel)
+
+studlevel_counts <- studlevel_topic_combos %>%
+  left_join(studlevel_counts, by = c("Topic", "studlevel")) %>%
+  mutate(n = replace_na(n, 0))
+
+studlevel_percent <- studlevel_counts %>%
+  group_by(Topic) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>% 
+  mutate(Topic = factor(Topic, levels = c("Anatomy & Physiology",
+                                          "Bioinformatics",
+                                          "Cell Structure & Function",
+                                          "Disease Ecology",
+                                          "Ecosystem Ecology",
+                                          "Evolution",
+                                          "Gene Editing" ,
+                                          "Genetics",
+                                          "Microbiology",
+                                          "Neuroscience",
+                                          "PCR Techniques",
+                                          "Phylogenetics",
+                                          "Noise",
+                                          "Other"),
+  ), Topic = fct_rev(Topic))
+
+studlevel_percent$studlevel<-factor(studlevel_percent$studlevel, levels=c("Intro-level (First-year/Sophomore)",
+                                                                          "Upper-level (Junior/Senior)",
+                                                                        "Not specified",
+                                                                        "Other"))
+studlevel_percent<-studlevel_percent %>% 
+  filter(!is.na(studlevel))
+
+ggplot(studlevel_percent, aes(x = Percent, y = Topic, fill = studlevel)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Topic", x = "Articles (%)", fill = "Student Level") +
+  theme_classic(base_size = 14) +
+  theme(axis.text.y = element_text(angle = 90, hjust = 1)) +
+  geom_text(data = studlevel_percent %>% 
+              group_by(Topic) %>%
+              summarise(total_n = sum(n)),
+            aes(y = Topic, x = 110, label = total_n),
+            inherit.aes = FALSE,
+            size = 5) +
+  scale_fill_manual(values = c("Intro-level (First-year/Sophomore)" = "#E2B4BD",
+                               "Upper-level (Junior/Senior)" = "#7DAF9C",
+                               "Not specified" = "#F1E8B8",
+                               "Other" = "#4E4C67")) +
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16, face = "bold"),
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.background = element_blank(),
+        legend.position = c(1.2, 0.5),  # manually places legend in white space
+        legend.justification = "left",
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 13, face = "bold"),
+        plot.margin = margin(5.5, 230, 5.5, 5.5)) +  # gives room for legend and label
+  annotate("text",
+           x = 123,
+           y = length(unique(studlevel_percent$Topic)) - 9,
+           label = "bold('Articles')~(italic(n))",
+           angle = 270,
+           hjust = 1,
+           fontface = "bold",
+           parse = TRUE,
+           size = 5) +
+  coord_cartesian(xlim = c(0, 100), clip = "off")
+
+
+ggsave("topicstudlevel_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
+```
+
+
+```{r major count bar}
+major_long<-fulldata %>%
+  filter(!is.na(major), !is.na(Topic)) %>%
+  separate_rows(major, sep = ";\\s*")  # Split on semicolon and optional space
+
+# Count each major by topic
+major_counts <- major_long %>%
+  count(Topic, major) %>%
+  group_by(Topic) %>%
+  mutate(total = sum(n)) %>%
+  ungroup() %>%
+  mutate(Topic = fct_reorder(Topic, total, .desc = TRUE)) #order topic by total count
+
+major_counts$major<-factor(major_counts$major, levels=c("Biology Majors",
+                                                        "Non-Biology Majors",
+                                                        "Not Specified",
+                                                        "Other"))
+
+# Bar plot: stacked by major
+ggplot(major_counts, aes(x = Topic, y = n, fill = major)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "Major")+
+  theme_classic(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_fill_manual(values = c("Biology Majors" = "#727D71",
+                               "Non-Biology Majors" = "#B47978",
+                               "Not Specified"="#E5E8B6",
+                               "Other"="#4E4C67"))+
+  #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        legend.background = element_blank(),
+        plot.margin = unit(c(5, 5, 5, 5), "pt"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
+        axis.text.y = element_text(size = 14), # Y-axis text
+        axis.title.x = element_text(size = 16, face = "bold"),# X-axis title
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.position = "right")         # Y-axis title
+
+ggsave("topicmajor_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+```
+
+
+```{r major stacked bar}
+####Stacked Bar ####
+
+major_long<-fulldata %>%
+  filter(!is.na(major), !is.na(Topic)) %>%
+  separate_rows(major, sep = ";\\s*")  # Split on semicolon and optional space
+
+
+#manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
+major_topic_combos <- expand_grid(major = unique(major_long$major),Topic = unique(major_long$Topic)) 
+
+major_counts <- major_long %>%
+  count(Topic, major)
+
+major_counts <- major_topic_combos %>%
+  left_join(major_counts, by = c("Topic", "major")) %>%
+  mutate(n = replace_na(n, 0))
+
+major_percent <- major_counts %>%
+  group_by(Topic) %>%
+  mutate(Percent = n / sum(n) * 100) %>%
+  ungroup() %>% 
+  mutate(Topic = factor(Topic, levels = c("Anatomy & Physiology",
+                                          "Bioinformatics",
+                                          "Cell Structure & Function",
+                                          "Disease Ecology",
+                                          "Ecosystem Ecology",
+                                          "Evolution",
+                                          "Gene Editing" ,
+                                          "Genetics",
+                                          "Microbiology",
+                                          "Neuroscience",
+                                          "PCR Techniques",
+                                          "Phylogenetics",
+                                          "Noise",
+                                          "Other"),
+  ), Topic = fct_rev(Topic))
+
+major_counts$major<-factor(major_counts$major, levels=c("Biology Majors",
+                                                        "Non-Biology Majors",
+                                                        "Not Specified",
+                                                        "Other"))
+major_percent<-major_percent %>% 
+  filter(!is.na(major))
+
+ggplot(major_percent, aes(x = Percent, y = Topic, fill = major)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Topic", x = "Articles (%)", fill = "Major") +
+  theme_classic(base_size = 14) +
+  theme(axis.text.y = element_text(angle = 90, hjust = 1)) +
+  geom_text(data = major_percent %>% 
+              group_by(Topic) %>%
+              summarise(total_n = sum(n)),
+            aes(y = Topic, x = 110, label = total_n),
+            inherit.aes = FALSE,
+            size = 5) +
+  scale_fill_manual(values = c("Biology Majors" = "#727D71",
+                               "Non-Biology Majors" = "#B47978",
+                               "Not Specified"="#E5E8B6",
+                               "Other"="#4E4C67"))+
+  theme_classic(base_size = 14) +
+  theme(axis.line = element_line(color = "black", size = 0.3),
+        axis.ticks = element_line(color = "black", size = 0.3),
+        axis.ticks.length = unit(5, "pt"),
+        panel.grid = element_blank(),
+        plot.background = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16, face = "bold"),
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.background = element_blank(),
+        legend.position = c(1.2, 0.5),  # manually places legend in white space
+        legend.justification = "left",
+        legend.text = element_text(size = 10),
+        legend.title = element_text(size = 13, face = "bold"),
+        plot.margin = margin(5.5, 230, 5.5, 5.5)) +  # gives room for legend and label
+  annotate("text",
+           x = 123,
+           y = length(unique(major_percent$Topic)) - 9,
+           label = "bold('Articles')~(italic(n))",
+           angle = 270,
+           hjust = 1,
+           fontface = "bold",
+           parse = TRUE,
+           size = 5) +
+  coord_cartesian(xlim = c(0, 100), clip = "off")
+
+
+ggsave("topicmajor_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
+```
