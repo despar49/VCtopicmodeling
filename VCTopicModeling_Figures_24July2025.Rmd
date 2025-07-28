@@ -21,9 +21,13 @@ library(cowplot)
 
 Load in your data
 ```{r load in your data}
+#On laptop
+#articledata<-read.csv("~/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
+#unigramtopic<-read.csv("~/VCtopicmodeling/Topics_Sorted_28July2025.csv")
 
-articledata<-read.csv("~/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
-unigramtopic<-read.csv("~/VCtopicmodeling/Topics_Sorted_23July2025.csv")
+#On desktop
+articledata<-read.csv("~/R/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
+unigramtopic<-read.csv("~/R/VCtopicmodeling/Topics_Sorted_28July2025.csv")
 
 ```
 
@@ -44,6 +48,9 @@ unmatched_topic <- anti_join(unigramtopic, articledata, by = "CovNum")
 fulldata <- fulldata %>% 
   filter(!is.na(Topic)) %>% 
   mutate(PubYear = as.numeric(year))#We might be having an issue because pubyear is an integer. Fix then rerun
+
+
+write.csv(unmatched_covnums,"remaining articles not matching to extraction data.csv")
 
 ```
 
