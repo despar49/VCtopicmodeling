@@ -42,7 +42,7 @@
 "41",2002,"PCR Techniques",0
 "42",2002,"Gene Editing",0
 "43",2003,"Ecosystem Ecology",0
-"44",2003,"Phylogenetics",2
+"44",2003,"Phylogenetics",1
 "45",2003,"Microbiology",0
 "46",2003,"Cell Structure & Function",1
 "47",2003,"Evolution",1
@@ -162,7 +162,7 @@
 "161",2011,"Noise",1
 "162",2011,"Neuroscience",1
 "163",2011,"Anatomy & Physiology",0
-"164",2011,"Bioinformatics",2
+"164",2011,"Bioinformatics",1
 "165",2011,"Disease Ecology",1
 "166",2011,"Other",1
 "167",2011,"PCR Techniques",1
@@ -246,7 +246,7 @@
 "245",2017,"Noise",9
 "246",2017,"Neuroscience",6
 "247",2017,"Anatomy & Physiology",1
-"248",2017,"Bioinformatics",1
+"248",2017,"Bioinformatics",2
 "249",2017,"Disease Ecology",2
 "250",2017,"Other",3
 "251",2017,"PCR Techniques",1
@@ -280,7 +280,7 @@
 "279",2019,"PCR Techniques",1
 "280",2019,"Gene Editing",3
 "281",2020,"Ecosystem Ecology",23
-"282",2020,"Phylogenetics",0
+"282",2020,"Phylogenetics",1
 "283",2020,"Microbiology",7
 "284",2020,"Cell Structure & Function",6
 "285",2020,"Evolution",2

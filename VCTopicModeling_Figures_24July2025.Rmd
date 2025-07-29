@@ -23,11 +23,11 @@ Load in your data
 ```{r load in your data}
 #On laptop
 #articledata<-read.csv("~/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
-#unigramtopic<-read.csv("~/VCtopicmodeling/Topics_Sorted_28July2025.csv")
+#unigramtopic<-read.csv("~/VCtopicmodeling/Topics_Sorted_29July2025.csv")
 
 #On desktop
 articledata<-read.csv("~/R/VCtopicmodeling/FullExtraction_CLEAN_23July2025.csv")
-unigramtopic<-read.csv("~/R/VCtopicmodeling/Topics_Sorted_28July2025.csv")
+unigramtopic<-read.csv("~/R/VCtopicmodeling/Topics_Sorted_29July2025.csv")
 
 ```
 
@@ -73,12 +73,12 @@ fig1data <- year_topic_combos %>%
 
 #Now that we have all year-topic combos represented, we can calculate the percentage of articles that fall into each topic each year.
 
-fig1data_percent <- fig1data_filled %>%
+fig1data_percent <- fig1data  %>%
   group_by(year) %>%
   mutate(Percent = n / sum(n) * 100) %>%
   ungroup()
 
-write.csv(fig1data,"stackeddata.csv")
+#write.csv(fig1data,"stackeddata.csv")
 ```
 
 ```{r}
@@ -124,7 +124,7 @@ ggplot(fig1data_percent, aes(x = year, y = Percent, fill = Topic)) +
    #        size = 3)+
   theme_classic(base_size = 18) +
   theme(panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA, size = 1),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
         panel.background = element_blank(),
         plot.background = element_blank(),
         axis.text.x = element_text(angle = 90, hjust = 1, size = 14),  # X-axis text
@@ -155,7 +155,7 @@ scale_fill_manual(values = c("Ecosystem Ecology" = "#264653",  # Dark teal
   #geom_vline(xintercept = 2011, linetype = "dashed", color = "red", size = 0.5)#add the line for V&C
 
 
-ggsave("topictime_area_24July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
+ggsave("topictime_area_29July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
 
 ```
 Here's the version that just uses n. We'll have to reorder the legend a bit to make interpretation a little easier.
@@ -192,7 +192,7 @@ ggplot(fig1data, aes(x = year, y = n, fill = Topic)) +
     "Unknown" = "#003049"
   )) +
   theme(
-    axis.line = element_line(color = "black", size = 0.3),
+    axis.line = element_line(color = "black", linewidth =0.3),
     axis.ticks = element_line(color = "black", size = 0.3),
     axis.ticks.length = unit(5, "pt"),
     panel.grid = element_blank(),
@@ -202,7 +202,7 @@ ggplot(fig1data, aes(x = year, y = n, fill = Topic)) +
     plot.margin = unit(c(5, 5, 5, 5), "pt"))
     #geom_vline(xintercept = 2011, linetype = "dashed", color = "red", size = 0.5)#add the line for V&C
 
-ggsave("topictime_area_cumulative_24July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
+ggsave("topictime_area_cumulative_29July2025.jpg",bg="white",dpi=600,w=13.9,h=6.6)
 
 ```
 
@@ -252,7 +252,7 @@ ggplot(fig1data_percent, aes(x = as.factor(year), y = Percent, fill = Topic)) +
         legend.position = "right")+         # Y-axis title
     scale_y_continuous(breaks = seq(0,100,10))
 
-ggsave("topictime_bar_24July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
+ggsave("topictime_bar_29July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
 ```
 
 Now lets make the cumulative version
@@ -294,8 +294,8 @@ ggplot(fig1data_bar, aes(x = as.factor(year), y = n, fill = Topic)) +
                                "Other" = "#6c757d",
                                "Unknown" = "#003049"))+
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -310,7 +310,7 @@ ggplot(fig1data_bar, aes(x = as.factor(year), y = n, fill = Topic)) +
         legend.position = "right")         # Y-axis title
 
 # Save
-ggsave("topictime_bar_cumulative_24July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
+ggsave("topictime_bar_cumulative_29July2025.jpg", bg = "white", dpi = 600, width = 13.9, height = 6.6)
 ```
 
 
@@ -343,8 +343,8 @@ ggplot(modality_counts, aes(x = Topic, y = n, fill = modality)) +
                                "Online" = "#8ab17d",
                                "Not specified" = "#264653"))+
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -358,7 +358,7 @@ ggplot(modality_counts, aes(x = Topic, y = n, fill = modality)) +
         legend.title = element_text(size = 13, face = "bold"),
         legend.position = "right")         # Y-axis title
 
-ggsave("topicmodality_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topicmodality_bar_counts_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 
@@ -366,7 +366,7 @@ ggsave("topicmodality_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width
 ####Stacked Bar ####
 
 #manuipulate the data so that we get all possible combos, counts, join the combo to the count data, and then calculate percentages based on counts.
-modality_topic_combos <- expand_grid(modality = unique(modality_long$modality),Topic = unique(fulldata_long$Topic)) 
+modality_topic_combos <- expand_grid(modality = unique(modality_long$modality),Topic = unique(modality_long$Topic)) 
 
 modality_counts <- modality_long %>%
   count(Topic, modality)
@@ -405,20 +405,14 @@ ggplot(modality_percent, aes(x = Percent, y = Topic, fill = modality)) +
   labs(y = "Topic", x = "Articles (%)", fill = "Modality") +
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(angle = 90, hjust = 1))+
-  geom_text(data = modality_percent %>% 
-              group_by(Topic) %>%
-              summarise(total_n = sum(n)),
-            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
-            inherit.aes = FALSE,
-            size = 5)+
   scale_fill_manual(values = c("In-person" = "#adb5bd",
                                "Hybrid (in-person and online)" = "#e9c46a",
                                "Online" = "#8ab17d",
                                "Not specified" = "#264653"))+
   guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -431,19 +425,26 @@ ggplot(modality_percent, aes(x = Percent, y = Topic, fill = modality)) +
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 13, face = "bold"),
          plot.margin = margin(5.5, 50, 5.5, 5.5))+
-  annotate("text",
-         x = 115,  # adjust as needed to match right margin
-         y = length(unique(context_percent$Topic)) - 9,  # top of y axis
-         label = "bold('Articles'~(italic(n)))",  # bold + italic
-         angle = 270,  # rotate text vertically
-         hjust = 1,   # align to top
-         fontface = "bold",
-         parse = TRUE,
-         size = 5)+
-  coord_cartesian(xlim = c(0, 100), clip = "off")+
-  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+#  annotate("text",
+  #       x = 115,  # adjust as needed to match right margin
+  #       y = length(unique(modality_percent$Topic)) - 9,  # top of y axis
+  #       label = "bold('Articles'~(italic(n)))",  # bold + italic
+  #       angle = 270,  # rotate text vertically
+  #       hjust = 1,   # align to top
+  #       fontface = "bold",
+  #       parse = TRUE,
+  #       size = 5)+
+  #coord_cartesian(xlim = c(0, 100), clip = "off")+
+#  geom_text(data = modality_percent %>% 
+  #            group_by(Topic) %>%
+  #            summarise(total_n = sum(n)),
+  #          aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+  #          inherit.aes = FALSE,
+  #          size = 5)+
+  #scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  scale_x_continuous(limits = c(0, 100.1), breaks=seq(0,100,25))
   
-ggsave("topicmodality_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topicmodality_stackedbar_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 
 ```
 
@@ -481,8 +482,8 @@ ggplot(context_counts, aes(x = Topic, y = n, fill = context)) +
                                "Not specified"="#B5CBB7"))+
   #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -496,7 +497,7 @@ ggplot(context_counts, aes(x = Topic, y = n, fill = context)) +
         legend.title = element_text(size = 10, face = "bold"),
         legend.position = "right")         # Y-axis title
 
-ggsave("topiccontext_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topiccontext_bar_counts_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 ```{r context stacked bar}
@@ -546,12 +547,6 @@ ggplot(context_percent, aes(x = Percent, y = Topic, fill = context)) +
   labs(y = "Topic", x = "Articles (%)", fill = "Context") +
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(angle = 90, hjust = 1))+
-  geom_text(data = context_percent %>% 
-              group_by(Topic) %>%
-              summarise(total_n = sum(n)),
-            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
-            inherit.aes = FALSE,
-            size = 5)+
   scale_fill_manual(values = c("Lecture" = "#66101F",
                                "Lab" = "#52528C",
                                "Field"="#00A676",
@@ -560,8 +555,8 @@ ggplot(context_percent, aes(x = Percent, y = Topic, fill = context)) +
                                "Not specified"="#B5CBB7"))+
   guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -574,19 +569,26 @@ ggplot(context_percent, aes(x = Percent, y = Topic, fill = context)) +
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 13, face = "bold"),
          plot.margin = margin(5.5, 50, 5.5, 5.5))+
-  annotate("text",
-         x = 115,  # adjust as needed to match right margin
-         y = length(unique(context_percent$Topic)) - 9,  # top of y axis
-         label = "bold('Articles'~(italic(n)))",  # bold + italic
-         angle = 270,  # rotate text vertically
-         hjust = 1,   # align to top
-         fontface = "bold",
-         parse = TRUE,
-         size = 5)+
-  coord_cartesian(xlim = c(0, 100), clip = "off")+
-  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+#  annotate("text",
+  #       x = 115,  # adjust as needed to match right margin
+  #       y = length(unique(modality_percent$Topic)) - 9,  # top of y axis
+  #       label = "bold('Articles'~(italic(n)))",  # bold + italic
+  #       angle = 270,  # rotate text vertically
+  #       hjust = 1,   # align to top
+  #       fontface = "bold",
+  #       parse = TRUE,
+  #       size = 5)+
+  #coord_cartesian(xlim = c(0, 100), clip = "off")+
+#  geom_text(data = modality_percent %>% 
+  #            group_by(Topic) %>%
+  #            summarise(total_n = sum(n)),
+  #          aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+  #          inherit.aes = FALSE,
+  #          size = 5)+
+  #scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  scale_x_continuous(limits = c(0, 100.1), breaks=seq(0,100,25))
 
-ggsave("topiccontext_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topiccontext_stackedbar_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 ```{r class_size count bar}
@@ -611,7 +613,7 @@ class_size_counts$class_size<-factor(class_size_counts$class_size, levels=c("> 1
 # Bar plot: stacked by class_size
 ggplot(class_size_counts, aes(x = Topic, y = n, fill = class_size)) +
   geom_bar(stat = "identity") +
-  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "class_size")+
+  labs(x = "Topic", y = expression("Articles (" * italic(n) * ")"), fill = "Class Size")+
   theme_classic(base_size = 14) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   scale_fill_manual(values = c("> 100" = "#000F14",
@@ -621,8 +623,8 @@ ggplot(class_size_counts, aes(x = Topic, y = n, fill = class_size)) +
                                "Not specified"="#E6BCCD"))+
   #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -636,7 +638,7 @@ ggplot(class_size_counts, aes(x = Topic, y = n, fill = class_size)) +
         legend.title = element_text(size = 10, face = "bold"),
         legend.position = "right")         # Y-axis title
 
-ggsave("topicclass_size_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topicclass_size_bar_counts_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 
@@ -691,12 +693,6 @@ ggplot(class_size_percent, aes(x = Percent, y = Topic, fill = class_size)) +
   labs(y = "Topic", x = "Articles (%)", fill = "Class Size") +
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(angle = 90, hjust = 1))+
-  geom_text(data = class_size_percent %>% 
-              group_by(Topic) %>%
-              summarise(total_n = sum(n)),
-            aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
-            inherit.aes = FALSE,
-            size = 5)+
   scale_fill_manual(values = c("> 100" = "#000F14",
                                "50-100" = "#3A376C",
                                "25-50"="#7E52A0",
@@ -704,8 +700,8 @@ ggplot(class_size_percent, aes(x = Percent, y = Topic, fill = class_size)) +
                                "Not specified"="#E6BCCD"))+
  # guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth =0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -718,17 +714,24 @@ ggplot(class_size_percent, aes(x = Percent, y = Topic, fill = class_size)) +
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 13, face = "bold"),
         plot.margin = margin(5.5, 50, 5.5, 5.5))+
-  annotate("text",
-           x = 115,  # adjust as needed to match right margin
-           y = length(unique(class_size_percent$Topic)) - 9,  # top of y axis
-           label = "bold('Articles'~(italic(n)))",  # bold + italic
-           angle = 270,  # rotate text vertically
-           hjust = 1,   # align to top
-           fontface = "bold",
-           parse = TRUE,
-           size = 5)+
-  coord_cartesian(xlim = c(0, 100), clip = "off")+
-  scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+#  annotate("text",
+  #       x = 115,  # adjust as needed to match right margin
+  #       y = length(unique(modality_percent$Topic)) - 9,  # top of y axis
+  #       label = "bold('Articles'~(italic(n)))",  # bold + italic
+  #       angle = 270,  # rotate text vertically
+  #       hjust = 1,   # align to top
+  #       fontface = "bold",
+  #       parse = TRUE,
+  #       size = 5)+
+  #coord_cartesian(xlim = c(0, 100), clip = "off")+
+#  geom_text(data = modality_percent %>% 
+  #            group_by(Topic) %>%
+  #            summarise(total_n = sum(n)),
+  #          aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+  #          inherit.aes = FALSE,
+  #          size = 5)+
+  #scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  scale_x_continuous(limits = c(0, 100.1), breaks=seq(0,100,25))
 
 ggsave("topicclass_size_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
 ```
@@ -762,8 +765,8 @@ ggplot(studlevel_counts, aes(x = Topic, y = n, fill = studlevel)) +
                                "Other"="#4E4C67"))+
   #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -777,7 +780,7 @@ ggplot(studlevel_counts, aes(x = Topic, y = n, fill = studlevel)) +
         legend.title = element_text(size = 10, face = "bold"),
         legend.position = "right")         # Y-axis title
 
-ggsave("topicstudlevel_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topicstudlevel_bar_counts_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 ```{r studlevel stacked bar}
@@ -830,19 +833,13 @@ ggplot(studlevel_percent, aes(x = Percent, y = Topic, fill = studlevel)) +
   labs(y = "Topic", x = "Articles (%)", fill = "Student Level") +
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(angle = 90, hjust = 1)) +
-  geom_text(data = studlevel_percent %>% 
-              group_by(Topic) %>%
-              summarise(total_n = sum(n)),
-            aes(y = Topic, x = 110, label = total_n),
-            inherit.aes = FALSE,
-            size = 5) +
   scale_fill_manual(values = c("Intro-level (First-year/Sophomore)" = "#E2B4BD",
                                "Upper-level (Junior/Senior)" = "#7DAF9C",
                                "Not specified" = "#F1E8B8",
                                "Other" = "#4E4C67")) +
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -856,19 +853,27 @@ ggplot(studlevel_percent, aes(x = Percent, y = Topic, fill = studlevel)) +
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 13, face = "bold"),
         plot.margin = margin(5.5, 230, 5.5, 5.5)) +  # gives room for legend and label
-  annotate("text",
-           x = 123,
-           y = length(unique(studlevel_percent$Topic)) - 9,
-           label = "bold('Articles')~(italic(n))",
-           angle = 270,
-           hjust = 1,
-           fontface = "bold",
-           parse = TRUE,
-           size = 5) +
-  coord_cartesian(xlim = c(0, 100), clip = "off")
+#  annotate("text",
+  #       x = 115,  # adjust as needed to match right margin
+  #       y = length(unique(modality_percent$Topic)) - 9,  # top of y axis
+  #       label = "bold('Articles'~(italic(n)))",  # bold + italic
+  #       angle = 270,  # rotate text vertically
+  #       hjust = 1,   # align to top
+  #       fontface = "bold",
+  #       parse = TRUE,
+  #       size = 5)+
+  #coord_cartesian(xlim = c(0, 100), clip = "off")+
+#  geom_text(data = modality_percent %>% 
+  #            group_by(Topic) %>%
+  #            summarise(total_n = sum(n)),
+  #          aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+  #          inherit.aes = FALSE,
+  #          size = 5)+
+  #scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  scale_x_continuous(limits = c(0, 100.1), breaks=seq(0,100,25))
 
 
-ggsave("topicstudlevel_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
+ggsave("topicstudlevel_stackedbar_29July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
 ```
 
 
@@ -902,8 +907,8 @@ ggplot(major_counts, aes(x = Topic, y = n, fill = major)) +
                                "Other"="#4E4C67"))+
   #guides(fill = guide_legend(ncol = 2))+ #lets us break our legend into two columns! super cool
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -917,7 +922,7 @@ ggplot(major_counts, aes(x = Topic, y = n, fill = major)) +
         legend.title = element_text(size = 10, face = "bold"),
         legend.position = "right")         # Y-axis title
 
-ggsave("topicmajor_bar_counts_24July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
+ggsave("topicmajor_bar_counts_29July2025.jpg", bg = "white", dpi = 600, width = 7.29, height = 5.49)
 ```
 
 
@@ -971,19 +976,13 @@ ggplot(major_percent, aes(x = Percent, y = Topic, fill = major)) +
   labs(y = "Topic", x = "Articles (%)", fill = "Major") +
   theme_classic(base_size = 14) +
   theme(axis.text.y = element_text(angle = 90, hjust = 1)) +
-  geom_text(data = major_percent %>% 
-              group_by(Topic) %>%
-              summarise(total_n = sum(n)),
-            aes(y = Topic, x = 110, label = total_n),
-            inherit.aes = FALSE,
-            size = 5) +
   scale_fill_manual(values = c("Biology Majors" = "#727D71",
                                "Non-Biology Majors" = "#B47978",
                                "Not Specified"="#E5E8B6",
                                "Other"="#4E4C67"))+
   theme_classic(base_size = 14) +
-  theme(axis.line = element_line(color = "black", size = 0.3),
-        axis.ticks = element_line(color = "black", size = 0.3),
+  theme(axis.line = element_line(color = "black", linewidth = 0.3),
+        axis.ticks = element_line(color = "black", linewidth = 0.3),
         axis.ticks.length = unit(5, "pt"),
         panel.grid = element_blank(),
         plot.background = element_blank(),
@@ -997,17 +996,25 @@ ggplot(major_percent, aes(x = Percent, y = Topic, fill = major)) +
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 13, face = "bold"),
         plot.margin = margin(5.5, 230, 5.5, 5.5)) +  # gives room for legend and label
-  annotate("text",
-           x = 123,
-           y = length(unique(major_percent$Topic)) - 9,
-           label = "bold('Articles')~(italic(n))",
-           angle = 270,
-           hjust = 1,
-           fontface = "bold",
-           parse = TRUE,
-           size = 5) +
-  coord_cartesian(xlim = c(0, 100), clip = "off")
+#  annotate("text",
+  #       x = 115,  # adjust as needed to match right margin
+  #       y = length(unique(modality_percent$Topic)) - 9,  # top of y axis
+  #       label = "bold('Articles'~(italic(n)))",  # bold + italic
+  #       angle = 270,  # rotate text vertically
+  #       hjust = 1,   # align to top
+  #       fontface = "bold",
+  #       parse = TRUE,
+  #       size = 5)+
+  #coord_cartesian(xlim = c(0, 100), clip = "off")+
+#  geom_text(data = modality_percent %>% 
+  #            group_by(Topic) %>%
+  #            summarise(total_n = sum(n)),
+  #          aes(y = Topic, x = 105, label = total_n),  # Place label above 100%
+  #          inherit.aes = FALSE,
+  #          size = 5)+
+  #scale_x_continuous(limits = c(0, 125), breaks=seq(0,100,25))
+  scale_x_continuous(limits = c(0, 100.1), breaks=seq(0,100,25))
 
 
-ggsave("topicmajor_stackedbar_24July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
+ggsave("topicmajor_stackedbar_29July2025.jpg", bg = "white", dpi = 600, width = 9, height = 5.49)
 ```
